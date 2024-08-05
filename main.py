@@ -45,10 +45,15 @@ class MainWindow(QWidget):
         self.scratch_pad_widget = QWidget()
         scratch_pad_widget_layout = QVBoxLayout()
         self.scratch_pad_widget.setLayout(scratch_pad_widget_layout)
-        scratch_pad_edit_text = QTextEdit()
+        self.scratch_pad_edit_text = QTextEdit()
+        self.scratch_pad_edit_text.setStyleSheet('padding: 15px; font-size: 18px')
+        with open('scratch_pad.md', 'r') as f:
+            self.scratch_pad_edit_text.setPlainText(f.read())
+        self.scratch_pad_edit_text.textChanged.connect(self.save_scratch_pad)
         scratch_pad_label = QLabel('Scratch Pad')
+        scratch_pad_label.setStyleSheet('font-size: 25px; font-weight: bold;')
         scratch_pad_widget_layout.addWidget(scratch_pad_label)
-        scratch_pad_widget_layout.addWidget(scratch_pad_edit_text)
+        scratch_pad_widget_layout.addWidget(self.scratch_pad_edit_text)
 
         # Scrollable File View Widget
         self.file_view_scroll_area = QScrollArea()
@@ -66,7 +71,7 @@ class MainWindow(QWidget):
 
         self.button_list = []
         for filename in os.listdir():
-            if os.path.isfile(filename):
+            if os.path.isfile(filename) and filename != "scratch_pad.md":
                 filename = filename.split('.')[0]
                 self.add_file_button(filename)
 
@@ -118,6 +123,10 @@ class MainWindow(QWidget):
         self.root_layout.addWidget(self.scratch_pad_widget)
         self.root_layout.setStretchFactor(self.side_bar, 1)
         self.root_layout.setStretchFactor(self.scratch_pad_widget, 10)
+    
+    def save_scratch_pad(self):
+        with open('scratch_pad.md', 'w') as f:
+            f.write(self.scratch_pad_edit_text.toPlainText())
 
     def change_notes_view(self):
         self.scratch_pad_widget.hide()
