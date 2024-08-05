@@ -18,7 +18,7 @@ class MainWindow(QWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.file_name = None
+        self.file_name = ''
         # Check if notes folder exists or not, if not then create one.
         if os.path.exists(os.path.expanduser('~/notes')) == False:
             os.makedirs(os.path.expanduser('~/notes'))
@@ -70,22 +70,32 @@ class MainWindow(QWidget):
                 filename = filename.split('.')[0]
                 self.add_file_button(filename)
 
-        # self.file_view_layout.addStretch()
-
         # Notes Widget
         self.notes_widget = QWidget(self)
         notes_widget_layout = QHBoxLayout()
         self.notes_widget.setLayout(notes_widget_layout)
 
+        self.notes_editor = QWidget(self)
+        self.notes_editor_layout = QVBoxLayout()
+        self.notes_editor.setLayout(self.notes_editor_layout)
+
         self.text_edit = QTextEdit(self)
         self.text_edit.setStyleSheet("padding: 15px; font-size: 18px")
         self.text_edit.setTabStopDistance(4*4)
         self.text_edit.textChanged.connect(lambda: self.setWindowTitle('*' + self.file_name))
+
+        self.notes_title = QLabel(self.file_name)
+        self.notes_title.setStyleSheet('font-size: 25px; font-weight: bold;')
+        self.notes_title.hide()
+
+        self.notes_editor_layout.addWidget(self.notes_title)
+        self.notes_editor_layout.addWidget(self.text_edit)
+
         notes_widget_layout.addWidget(self.file_view_scroll_area)
-        notes_widget_layout.addWidget(self.text_edit)
+        notes_widget_layout.addWidget(self.notes_editor)
 
         notes_widget_layout.setStretchFactor(self.file_view_scroll_area, 1)
-        notes_widget_layout.setStretchFactor(self.text_edit, 5)
+        notes_widget_layout.setStretchFactor(self.notes_editor, 5)
 
         # Root layout
         self.root_layout = QHBoxLayout()
@@ -132,6 +142,8 @@ class MainWindow(QWidget):
     def file_edit(self):
         clicked_button = self.sender() # get button detail for filename
         self.file_name = clicked_button.text() + '.md'
+        self.notes_title.setText(clicked_button.text())
+        self.notes_title.show()
 
         # Read file
         with open(self.file_name, 'r') as f:
