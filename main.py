@@ -5,17 +5,19 @@ from PyQt6.QtWidgets import (
     QWidget,
     QHBoxLayout,
     QVBoxLayout,
+
     QTextEdit,
+    QTextBrowser,
     QLabel,
     QPushButton,
     QInputDialog,
     QScrollArea
 )
 from PyQt6.QtGui import QKeySequence, QShortcut
+from markdown2 import markdown
 from PyQt6.QtCore import Qt
 
 # TODO: Add markdown rendering
-# TODO: add live saving feature
 # TODO: add notes delete feature
 # TODO: add search feature
 
@@ -94,12 +96,28 @@ class MainWindow(QWidget):
         self.text_edit.setTabStopDistance(4*4)
         self.text_edit.textChanged.connect(self.save_file)
 
+        self.markdown_viewer = QTextBrowser()
+        self.markdown_viewer.setOpenExternalLinks(True)
+        self.markdown_viewer.setStyleSheet('padding: 15px;')
+        self.markdown_viewer.hide()
+
+        # Notes heading
+        self.notes_heading_widget = QWidget()
+        self.notes_heading_widget_layout = QHBoxLayout()
+        self.notes_heading_widget.setLayout(self.notes_heading_widget_layout)
         self.notes_title = QLabel(self.file_name)
+        self.toggle_markdown = False
+        self.markdown_render_btn = QPushButton('Preview')
+        self.markdown_render_btn.hide()
+        self.markdown_render_btn.clicked.connect(self.render_markdown)
         self.notes_title.setStyleSheet('font-size: 25px; font-weight: bold;')
+        self.notes_heading_widget_layout.addWidget(self.notes_title)
+        self.notes_heading_widget_layout.addWidget(self.markdown_render_btn)
         self.notes_title.hide()
 
-        self.notes_editor_layout.addWidget(self.notes_title)
+        self.notes_editor_layout.addWidget(self.notes_heading_widget)
         self.notes_editor_layout.addWidget(self.text_edit)
+        self.notes_editor_layout.addWidget(self.markdown_viewer)
 
         notes_widget_layout.addWidget(self.file_view_scroll_area)
         notes_widget_layout.addWidget(self.notes_editor)
@@ -154,6 +172,7 @@ class MainWindow(QWidget):
         self.file_name = clicked_button.text() + '.md'
         self.notes_title.setText(clicked_button.text())
         self.notes_title.show()
+        self.markdown_render_btn.show()
 
         # Read file
         with open(self.file_name, 'r') as f:
@@ -164,7 +183,18 @@ class MainWindow(QWidget):
         if self.file_name:
             with open(self.file_name, 'w') as f:
                 f.write(self.text_edit.toPlainText())
-                
+    
+    def render_markdown(self):
+        if self.toggle_markdown == False:
+            self.toggle_markdown = True
+            self.text_edit.hide()
+            self.markdown_viewer.show()
+            self.markdown_viewer.setHtml(markdown(self.text_edit.toPlainText()))
+        elif self.toggle_markdown == True:
+            self.markdown_viewer.hide()
+            self.text_edit.show()
+            self.toggle_markdown = False
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = MainWindow()
