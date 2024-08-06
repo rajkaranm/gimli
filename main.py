@@ -14,6 +14,11 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtCore import Qt
 
+# TODO: Add markdown rendering
+# TODO: add live saving feature
+# TODO: add notes delete feature
+# TODO: add search feature
+
 class MainWindow(QWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -87,7 +92,7 @@ class MainWindow(QWidget):
         self.text_edit = QTextEdit(self)
         self.text_edit.setStyleSheet("padding: 15px; font-size: 18px")
         self.text_edit.setTabStopDistance(4*4)
-        self.text_edit.textChanged.connect(lambda: self.setWindowTitle('*' + self.file_name))
+        self.text_edit.textChanged.connect(self.save_file)
 
         self.notes_title = QLabel(self.file_name)
         self.notes_title.setStyleSheet('font-size: 25px; font-weight: bold;')
@@ -110,10 +115,6 @@ class MainWindow(QWidget):
 
         self.root_layout.setStretchFactor(self.side_bar, 1)
         self.root_layout.setStretchFactor(self.notes_widget, 10)
-
-        # Key press
-        self.shortcut = QShortcut(QKeySequence('Ctrl+s'), self)
-        self.shortcut.activated.connect(self.save_file)
 
         self.show()
 
@@ -163,8 +164,7 @@ class MainWindow(QWidget):
         if self.file_name:
             with open(self.file_name, 'w') as f:
                 f.write(self.text_edit.toPlainText())
-                self.setWindowTitle(self.file_name)
-
+                
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = MainWindow()
