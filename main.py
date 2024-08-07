@@ -5,13 +5,13 @@ from PyQt6.QtWidgets import (
     QWidget,
     QHBoxLayout,
     QVBoxLayout,
-
     QTextEdit,
     QTextBrowser,
     QLabel,
     QPushButton,
     QInputDialog,
-    QScrollArea
+    QScrollArea,
+    QSplitter
 )
 from PyQt6.QtGui import QKeySequence, QShortcut
 from markdown2 import markdown
@@ -28,7 +28,7 @@ class MainWindow(QWidget):
 
         self.file_name = ''
         # Check if notes folder exists or not, if not then create one.
-        if os.path.exists(os.path.expanduser('~/notes')) == False:
+        if not os.path.exists(os.path.expanduser('~/notes')):
             os.makedirs(os.path.expanduser('~/notes'))
 
         os.chdir(os.path.expanduser("~/notes"))
@@ -45,7 +45,7 @@ class MainWindow(QWidget):
         scratch_pad.setIconSize(QSize(22, 22))
         scratch_pad.clicked.connect(self.change_scratch_pad_view)
         notes_icon = qta.icon('mdi.notebook')
-        notes = QPushButton(notes_icon,'')
+        notes = QPushButton(notes_icon, '')
         notes.setIconSize(QSize(22, 22))
         notes.clicked.connect(self.change_notes_view)
         side_bar_layout = QVBoxLayout()
@@ -59,10 +59,11 @@ class MainWindow(QWidget):
         scratch_pad_widget_layout = QVBoxLayout()
         self.scratch_pad_widget.setLayout(scratch_pad_widget_layout)
         self.scratch_pad_edit_text = QTextEdit()
-        self.scratch_pad_edit_text.setTabStopDistance(4*4)
+        self.scratch_pad_edit_text.setTabStopDistance(4 * 4)
         self.scratch_pad_edit_text.setStyleSheet('padding: 15px; font-size: 18px')
-        with open('scratch_pad.md', 'r') as f:
-            self.scratch_pad_edit_text.setPlainText(f.read())
+        if os.path.exists('scratch_pad.md'):
+            with open('scratch_pad.md', 'r') as f:
+                self.scratch_pad_edit_text.setPlainText(f.read())
         self.scratch_pad_edit_text.textChanged.connect(self.save_scratch_pad)
         scratch_pad_label = QLabel('Scratch Pad')
         scratch_pad_label.setStyleSheet('font-size: 25px; font-weight: bold;')
@@ -73,13 +74,13 @@ class MainWindow(QWidget):
         self.file_view_scroll_area = QScrollArea()
         self.file_view_scroll_area.setWidgetResizable(True)
         self.file_view_content = QWidget()
-        self.file_view_content.setMinimumWidth(100)
+        self.file_view_content.setMinimumWidth(100) # It was hiding the horizontal scroller
         self.file_view_layout = QVBoxLayout(self.file_view_content)
         self.file_view_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.file_view_scroll_area.setWidget(self.file_view_content)
 
         file_create_button_icon = qta.icon('ei.plus')
-        file_create_button = QPushButton(file_create_button_icon,'')
+        file_create_button = QPushButton(file_create_button_icon, '')
         file_create_button.clicked.connect(self.create_file)
         self.file_view_layout.addWidget(file_create_button)
         self.file_view_layout.addWidget(QLabel('All Notes'))
@@ -91,17 +92,13 @@ class MainWindow(QWidget):
                 self.add_file_button(filename)
 
         # Notes Widget
-        self.notes_widget = QWidget(self)
-        notes_widget_layout = QHBoxLayout()
-        self.notes_widget.setLayout(notes_widget_layout)
-
         self.notes_editor = QWidget(self)
         self.notes_editor_layout = QVBoxLayout()
         self.notes_editor.setLayout(self.notes_editor_layout)
 
         self.text_edit = QTextEdit(self)
         self.text_edit.setStyleSheet("padding: 15px; font-size: 18px")
-        self.text_edit.setTabStopDistance(4*4)
+        self.text_edit.setTabStopDistance(4 * 4)
         self.text_edit.textChanged.connect(self.save_file)
 
         self.notes_mode = 'View'
@@ -129,25 +126,27 @@ class MainWindow(QWidget):
         self.notes_editor_layout.addWidget(self.text_edit)
         self.notes_editor_layout.addWidget(self.markdown_viewer)
 
-        notes_widget_layout.addWidget(self.file_view_scroll_area)
-        notes_widget_layout.addWidget(self.notes_editor)
+        # Using QSplitter to make the file view horizontally resizable
+        self.splitter = QSplitter(Qt.Orientation.Horizontal)
+        self.splitter.addWidget(self.file_view_scroll_area)
+        self.splitter.addWidget(self.notes_editor)
 
-        notes_widget_layout.setStretchFactor(self.file_view_scroll_area, 1)
-        notes_widget_layout.setStretchFactor(self.notes_editor, 5)
+        self.splitter.setSizes([200, 800])  # Initial sizes
 
         # Root layout
         self.root_layout = QHBoxLayout()
         self.setLayout(self.root_layout)
         self.root_layout.addWidget(self.side_bar)
-        self.root_layout.addWidget(self.notes_widget)
+        self.root_layout.addWidget(self.splitter)
 
         self.root_layout.setStretchFactor(self.side_bar, 1)
-        self.root_layout.setStretchFactor(self.notes_widget, 10)
+        self.root_layout.setStretchFactor(self.splitter, 10)
 
         self.show()
 
     def change_scratch_pad_view(self):
-        self.notes_widget.hide()
+        self.splitter.hide()
+        self.notes_editor.hide()
         self.scratch_pad_widget.show()
         self.root_layout.addWidget(self.scratch_pad_widget)
         self.root_layout.setStretchFactor(self.side_bar, 1)
@@ -159,7 +158,8 @@ class MainWindow(QWidget):
 
     def change_notes_view(self):
         self.scratch_pad_widget.hide()
-        self.notes_widget.show()
+        self.notes_editor.show()
+        self.splitter.show()
 
     def create_file(self):
         text, ok = QInputDialog.getText(self, 'Create Note', 'Name of Your Note')
@@ -202,7 +202,7 @@ class MainWindow(QWidget):
             self.text_edit.hide()
             self.markdown_viewer.show()
             self.markdown_render_btn.setText(self.notes_mode)
-            # self.markdown_viewer.setHtml(markdown(self.text_edit.toPlainText()))
+            self.markdown_viewer.setHtml(markdown(self.text_edit.toPlainText()))
         elif self.toggle_markdown == True:
             self.markdown_viewer.hide()
             self.text_edit.show()
