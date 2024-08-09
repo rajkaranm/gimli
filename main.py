@@ -34,8 +34,8 @@ class MainWindow(QWidget):
         os.chdir(os.path.expanduser("~/notes"))
 
         self.setWindowTitle("Gimli")
-        self.setMinimumWidth(1000)
-        self.setMinimumHeight(800)
+        self.setMinimumWidth(800)
+        self.setMinimumHeight(500)
 
         # Sidebar
         self.side_bar = QWidget(self)
